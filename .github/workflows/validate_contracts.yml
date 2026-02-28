@@ -6,8 +6,11 @@ on:
       - master
 
 jobs:
+  # ── 1. Governance contracts ─────────────────────────────────────────────────
+  # Custom Python validator enforcing business-logic and governance rules
+  # (baseline fields, tier tags, revenue labels, PII/join/raw-column safety).
   validate:
-    name: Run contract validator
+    name: Governance contracts
     runs-on: ubuntu-latest
 
     steps:
@@ -27,3 +30,66 @@ jobs:
 
       - name: Run contract validator
         run: python validate_contracts.py
+
+  # ── 2. dbt compile ──────────────────────────────────────────────────────────
+  # Validates SQL syntax and ref() resolution without executing queries.
+  # Requires four repository secrets: DBT_HOST, DBT_USER, DBT_PASSWORD, DBT_DBNAME.
+  dbt-compile:
+    name: dbt compile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt-postgres
+        run: pip install dbt-postgres
+
+      - name: Write profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat << 'EOF' > ~/.dbt/profiles.yml
+          governed_metrics:
+            target: ci
+            outputs:
+              ci:
+                type: postgres
+                host: ${{ secrets.DBT_HOST }}
+                port: 5432
+                user: ${{ secrets.DBT_USER }}
+                password: ${{ secrets.DBT_PASSWORD }}
+                dbname: ${{ secrets.DBT_DBNAME }}
+                schema: ci_compile
+                threads: 4
+                sslmode: require
+          EOF
+
+      - name: dbt compile
+        run: dbt compile
+
+  # ── 3. Lightdash lint ───────────────────────────────────────────────────────
+  # Validates YAML files against Lightdash JSON schemas (structural check —
+  # no credentials or live instance required).
+  lightdash-lint:
+    name: Lightdash lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Lightdash CLI
+        run: npm install -g @lightdash/cli
+
+      - name: Lightdash lint
+        run: lightdash lint
