@@ -22,5 +22,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Run unit tests
+        run: pytest test_validate_contracts.py -v
+
       - name: Run contract validator
         run: python validate_contracts.py
