@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order. Aggregates line items to produce gross_revenue, then
+      computes net_revenue after discounts and refunds.
+    columns:
+      - name: order_id
+        description: "Unique identifier for the order."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to the customer who placed the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: order_date
+        description: "Date the order was placed."
+      - name: status
+        description: "Fulfillment status of the order."
+      - name: discount_amount
+        description: "Monetary discount applied to the order."
+      - name: refund_amount
+        description: "Monetary amount refunded on the order."
+      - name: item_count
+        description: "Number of distinct line items in the order."
+      - name: gross_revenue
+        description: "Sum of item_revenue across all line items in the order."
+        tests:
+          - not_null
+      - name: net_revenue
+        description: "gross_revenue minus refund_amount and discount_amount."
+        tests:
+          - not_null

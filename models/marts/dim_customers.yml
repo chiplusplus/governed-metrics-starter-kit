@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "One row per customer. Pass-through from stg_customers."
+    columns:
+      - name: customer_id
+        description: "Unique identifier for the customer."
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "Customer's first name."
+      - name: last_name
+        description: "Customer's last name."
+      - name: email
+        description: "Customer's email address."
+        tests:
+          - not_null
+      - name: country
+        description: "Country where the customer is based (ISO 2-letter code)."
+      - name: marketing_channel
+        description: "Customer acquisition channel."
+      - name: created_at
+        description: "Date the customer account was created."
