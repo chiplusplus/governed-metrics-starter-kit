@@ -1,174 +1,76 @@
 # governed-metrics-starter-kit
 
-A dbt project demonstrating a **governed metrics layer**: a staging-to-marts architecture with Lightdash semantic layer config, dual revenue definitions, and a CI pipeline that blocks any PR that violates a metric contract.
+Every analytics team hits the same wall: two dashboards show different revenue. Finance has one figure. Growth has another. A new analyst learns which to use from Slack. Three months later, nobody's sure anymore.
 
-## How it works
+That's not a data quality problem. It's a governance problem.
 
-```
-CSV seeds → staging (views) → marts (tables) → Lightdash semantic layer
-                                                        ↑
-                                          governed by metric contracts
-                                          enforced on every PR via CI
-```
+---
 
-The project enforces a three-tier metric governance system:
+## What this is
 
-| Tier | Tag | Required fields | Who owns it |
-|------|-----|-----------------|-------------|
-| Official | `official` | label, description, type, sql, owner, format | Finance |
-| Supported | `supported` | label, description, type, sql, owner | Growth / Finance |
+A working dbt + Lightdash reference project demonstrating **metrics-as-code with enforced governance**. Not a dbt tutorial. A template for the patterns that make a semantic layer trustworthy enough to build on.
+
+---
+
+## The Lightdash approach
+
+Lightdash's core idea: metric definitions belong in your dbt project, version-controlled alongside the models they describe - not in dashboards, not in ad-hoc SQL. Metrics are defined once, reviewed in PRs, and served consistently to every consumer.
+
+This project takes that further. Metrics are treated like APIs: they have owners, they have contracts, and breaking changes are caught in CI before they reach production.
+
+---
+
+## The governance model
+
+Three tiers, each progressively stricter:
+
+| Tier | Tag | Required fields | Owned by |
+|------|-----|-----------------|----------|
+| Official | `official` | label, description, type, sql, **owner, format** | Finance |
+| Supported | `supported` | label, description, type, sql, **owner** | Growth / Finance |
 | Experimental | `experimental` | label, description, type, sql | Anyone |
 
-Every metric must declare exactly one tier tag. Promotion from experimental → supported → official is a deliberate, reviewable change.
+Every metric must declare exactly one tier. Promotion is a deliberate PR, not a quiet edit.
 
-See [contracts.md](contracts.md) for the full contract specification.
-
----
-
-## Models
-
-| Model | Layer | Materialization | Description |
-|-------|-------|-----------------|-------------|
-| `stg_customers` | Staging | View | Cleaned customer records |
-| `stg_orders` | Staging | View | Cleaned order headers |
-| `stg_order_items` | Staging | View | Cleaned order line items |
-| `dim_customers` | Marts | Table | One row per customer |
-| `fct_order_items` | Marts | Table | One row per line item, with `item_revenue` |
-| `fct_orders` | Marts | Table | One row per order, with `gross_revenue` and `net_revenue` |
-
-## Lineage
-
-```
-seeds/customers   → stg_customers   → dim_customers
-seeds/orders      → stg_orders      ──────────────────────────┐
-seeds/order_items → stg_order_items → fct_order_items → fct_orders
-```
-
-## Key metrics
-
-| Metric | Model | Definition |
-|--------|-------|------------|
-| `item_revenue` | `fct_order_items` | `quantity × unit_price` |
-| `gross_revenue` | `fct_orders` | `sum(item_revenue)` across all line items |
-| `net_revenue` | `fct_orders` | `gross_revenue − refund_amount − discount_amount` |
-
-## Materialization rationale
-
-| Layer | Strategy | Why |
-|-------|----------|-----|
-| Staging | `view` | Zero storage cost; always reads fresh seed data; only lightweight type casts and renames |
-| Marts | `table` | Aggregations (`SUM`, `COUNT`) are expensive to recompute on every query; analysts hit these models directly |
-
-## Setup
-
-### Prerequisites
-
-- Python 3.9+
-- pip
-
-### Install
-
-```bash
-pip install dbt-postgres
-```
-
-### Configure profile
-
-**Option A** — copy to the default dbt location:
-
-```bash
-cp profiles.yml ~/.dbt/profiles.yml
-dbt build
-```
-
-**Option B** — pass the project root as the profiles directory on every command:
-
-```bash
-dbt build --profiles-dir .
-```
-
-### Run
-
-```bash
-# Load seed CSV data into Postgres
-dbt seed --profiles-dir .
-
-# Build all models
-dbt run --profiles-dir .
-
-# Run all tests (schema + singular business-logic)
-dbt test --profiles-dir .
-
-# Or do everything in one command
-dbt build --profiles-dir .
-```
-
-A `profiles.yml` is required locally but is `.gitignore`d — see **Configure profile** above.
-
-## Tests
-
-Schema tests (`unique`, `not_null`, `relationships`, `accepted_values`) are defined in the `_*__models.yml` files alongside each model.
-
-Three business-logic singular tests live in `tests/`:
-
-| Test file | Rule enforced |
-|-----------|---------------|
-| `assert_discount_amount_non_negative` | `discount_amount >= 0` on every order |
-| `assert_refund_amount_non_negative` | `refund_amount >= 0` on every order |
-| `assert_net_revenue_calculation` | `net_revenue = gross_revenue − refund_amount − discount_amount` |
-
-## CI
-
-Every pull request to `master` triggers three parallel checks:
-
-| Job | Tool | What it catches |
-|-----|------|-----------------|
-| **Governance contracts** | `pytest` + `validate_contracts.py` | Missing fields, wrong tier tags, ambiguous revenue labels, exposed PII or raw revenue columns, unsafe joins |
-| **dbt compile** | `dbt-postgres` | Broken `ref()`, Jinja errors, invalid SQL syntax |
-| **Lightdash lint** | `@lightdash/cli` | Invalid Lightdash YAML schemas (metric types, dimension config, join structure) |
-
-Lightdash lint and the custom validator complement each other: lint checks **structure** (is this valid Lightdash config?), the validator checks **governance** (does this follow our rules?).
-
----
-
-## Breaking change: what a failing PR looks like
-
-To see the CI enforcement in action, make this change on a branch and open a PR:
-
-**In `models/marts/fct_orders.yml`**, change the `revenue_net` label:
+Two revenue metrics exist by design. `revenue_net` (Net Revenue, Finance, official) and `revenue_gross` (Gross Revenue, Growth, supported) are both valid — they just mean different things. The contracts enforce that their labels make the distinction unambiguous:
 
 ```yaml
-# before — correct
 revenue_net:
-  label: "Net Revenue (Official)"
+  label: "Net Revenue (Official)"   # must include the governance qualifier — enforced in CI
+  tags: [official, revenue]
+  owner: Finance
 
-# after — breaks contract S1
-revenue_net:
-  label: "Revenue"
+revenue_gross:
+  label: "Gross Revenue (Topline)"  # must include the governance qualifier — enforced in CI
+  tags: [supported, revenue]
+  owner: Growth
 ```
 
-The `Governance contracts` CI job will fail. The **Run contract validator** step output:
+Governance also applies at the column level. Raw revenue columns (`gross_revenue`, `net_revenue`) and PII fields (`email`, `first_name`, `last_name`) are marked `hidden: true` in the Lightdash dimension config — they don't appear in the explore UI. Analysts and AI agents can only access them through the governed metrics above, not as raw dimensions they can accidentally aggregate themselves.
+
+---
+
+## Contracts in CI
+
+Every PR to `master` runs three parallel checks:
+
+| Check | Tool | What it catches |
+|-------|------|-----------------|
+| **Governance contracts** | `validate_contracts.py` | Missing fields, wrong tier tags, ambiguous revenue labels, exposed PII, raw revenue columns surfaced as dimensions, unsafe join config |
+| **dbt compile** | `dbt-postgres` | Broken `ref()`, Jinja errors, invalid SQL |
+| **Lightdash lint** | `@lightdash/cli` | Invalid Lightdash YAML schemas |
+
+Lightdash lint catches structural problems. The custom validator catches governance problems. They complement each other.
+
+The validator covers three layers: baseline rules (every metric, every model), tiered rules (stricter as trust increases), and special rules (specific high-value models). Full spec in [contracts.md](contracts.md).
+
+### What a failing PR looks like
+
+Change `revenue_net`'s label from `"Net Revenue (Official)"` to `"Revenue"` and open a PR. The `Governance contracts` job fails:
 
 ```
-Running governed-metrics contract validation...
-Discovered 8 metric(s) across 1 model(s): fct_orders
-Tier breakdown: 2 official, 6 supported
-
-── Baseline Contracts (every metric, every model) ──────────────────
-[PASS] B1: Every metric must declare label, description, type, sql
-[PASS] B2: Every metric must declare exactly one tier tag  (official / supported / experimental)
-
-── Tiered Contracts ─────────────────────────────────────────────────
-[PASS] T1 (official):    Must also declare owner and format
-[PASS] T2 (supported):   Must also declare owner
-     T3 (experimental): only baseline fields required — no additional checks
-
-── Special Contracts (governance & high-value metrics) ──────────────
 [FAIL] S1: Revenue metric labels must include governance qualifiers
        - 'revenue_net' label must be "Net Revenue (Official)", got "Revenue"
-[PASS] S2: Joins must declare primary keys and cardinality
-[PASS] S3: Sensitive customer fields must be hidden
-[PASS] S4: Raw revenue columns must not be exposed as dimensions
 
 One or more contracts failed. See violations above.
 Error: Process completed with exit code 1.
@@ -179,38 +81,75 @@ Error: Process completed with exit code 1.
 
 ---
 
+## Why this matters for AI analytics
+
+When an AI agent queries a semantic layer, it uses whatever definitions exist. If `revenue` is ambiguous, the AI picks one arbitrarily. If `email` isn't hidden, it surfaces it.
+
+Governed metrics are the prerequisite for safe self-serve — human or AI.
+
+---
+
+## What to adapt for your project
+
+- **The tier system** — swap tiers and owners to match your org structure
+- **`contracts.md`** — write the rules in plain language before making them machine-enforced
+- **`validate_contracts.py`** — add new special contracts for your high-value models; the pattern scales to any dbt project
+- **Hidden columns** — mark raw and sensitive fields `hidden: true` and surface them only through governed metrics
+
+---
+
+## Quick start
+
+**Prerequisites:** Python 3.10+, a Postgres database (the project uses [Neon](https://neon.tech) — any Postgres works).
+
+```bash
+pip install -r requirements.txt   # pyyaml, pytest, dbt-postgres (dbt-core installed transitively)
+dbt build --profiles-dir .        # requires profiles.yml (gitignored — add your credentials)
+python validate_contracts.py      # run governance checks locally
+pytest test_validate_contracts.py # run validator unit tests
+```
+
+`profiles.yml` is gitignored. Use this template:
+
+```yaml
+governed_metrics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: your-host
+      port: 5432
+      user: your-user
+      password: your-password
+      dbname: your-db
+      schema: public
+      threads: 4
+      sslmode: require
+```
+
+For CI, set `DBT_HOST`, `DBT_USER`, `DBT_PASSWORD`, `DBT_DBNAME` as repository secrets. The dbt compile job skips automatically when secrets are absent, so external contributors aren't blocked.
+
+---
+
 ## Project structure
 
 ```
 governed-metrics-starter-kit/
-├── contracts.md                         # Contract specification
-├── validate_contracts.py                # CI validator (baseline / tiered / special)
-├── test_validate_contracts.py           # pytest unit tests for the validator
-├── requirements.txt                     # pyyaml, pytest
-├── dbt_project.yml
-├── profiles.yml                         # gitignored — not committed
-├── .github/
-│   └── workflows/
-│       └── validate_contracts.yml       # CI: governance + dbt compile + lightdash lint
+├── contracts.md                    # contract specification (human-readable)
+├── validate_contracts.py           # CI validator: baseline / tiered / special
+├── test_validate_contracts.py      # pytest unit tests for the validator
+├── requirements.txt
+├── .github/workflows/
+│   └── validate_contracts.yml      # governance + dbt compile + lightdash lint
 ├── seeds/
-│   ├── customers.csv                    # 5 customers
-│   ├── orders.csv                       # 15 orders
-│   └── order_items.csv                  # 38 line items
+│   ├── customers.csv               # 5 customers
+│   ├── orders.csv                  # 15 orders
+│   └── order_items.csv             # 38 line items
 ├── models/
-│   ├── staging/
-│   │   ├── _staging__models.yml
-│   │   ├── stg_customers.sql
-│   │   ├── stg_orders.sql
-│   │   └── stg_order_items.sql
+│   ├── staging/                    # views: type casts and renames only
 │   └── marts/
-│       ├── dim_customers.sql
-│       ├── dim_customers.yml            # primary_key, PII hidden, Lightdash dimensions
-│       ├── fct_order_items.sql
-│       ├── fct_order_items.yml
-│       ├── fct_orders.sql
-│       └── fct_orders.yml              # 8 governed metrics, joins, group_details
-└── tests/
-    ├── assert_discount_amount_non_negative.sql
-    ├── assert_refund_amount_non_negative.sql
-    └── assert_net_revenue_calculation.sql
+│       ├── dim_customers.yml       # primary_key, PII hidden, Lightdash dimensions
+│       ├── fct_orders.yml          # 8 governed metrics, joins, group_details
+│       └── fct_order_items.yml
+└── tests/                          # singular business-logic tests
 ```
