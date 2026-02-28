@@ -33,7 +33,10 @@ jobs:
 
   # ── 2. dbt compile ──────────────────────────────────────────────────────────
   # Validates SQL syntax and ref() resolution without executing queries.
-  # Requires four repository secrets: DBT_HOST, DBT_USER, DBT_PASSWORD, DBT_DBNAME.
+  # Steps after the secrets check are skipped automatically when DBT_HOST is
+  # absent (e.g. forks / external contributors), so the job always passes.
+  # Set DBT_HOST, DBT_USER, DBT_PASSWORD, DBT_DBNAME as repository secrets
+  # to enable compilation.
   dbt-compile:
     name: dbt compile
     runs-on: ubuntu-latest
@@ -42,15 +45,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check DB secrets are configured
+        id: check
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+        run: |
+          if [ -n "$DBT_HOST" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping dbt compile — DBT_HOST secret not set."
+          fi
+
       - name: Set up Python
+        if: steps.check.outputs.configured == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dbt-postgres
+        if: steps.check.outputs.configured == 'true'
         run: pip install dbt-postgres
 
       - name: Write profiles.yml
+        if: steps.check.outputs.configured == 'true'
         run: |
           mkdir -p ~/.dbt
           cat << 'EOF' > ~/.dbt/profiles.yml
@@ -70,6 +88,7 @@ jobs:
           EOF
 
       - name: dbt compile
+        if: steps.check.outputs.configured == 'true'
         run: dbt compile
 
   # ── 3. Lightdash lint ───────────────────────────────────────────────────────
