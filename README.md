@@ -1,6 +1,6 @@
 # governed-metrics-starter-kit
 
-A minimal dbt project using DuckDB and CSV seeds that demonstrates a staging-to-marts architecture with fact and dimension tables.
+A minimal dbt project using Postgres (Neon) and CSV seeds that demonstrates a staging-to-marts architecture with fact and dimension tables.
 
 ## Models
 
@@ -46,7 +46,7 @@ seeds/order_items → stg_order_items → fct_order_items → fct_orders
 ### Install
 
 ```bash
-pip install dbt-duckdb
+pip install dbt-postgres
 ```
 
 ### Configure profile
@@ -67,7 +67,7 @@ dbt build --profiles-dir .
 ### Run
 
 ```bash
-# Load seed CSV data into DuckDB
+# Load seed CSV data into Postgres
 dbt seed --profiles-dir .
 
 # Build all models
@@ -80,7 +80,7 @@ dbt test --profiles-dir .
 dbt build --profiles-dir .
 ```
 
-The `dev.duckdb` file will be created in the project root on first run and is already `.gitignore`d.
+A `profiles.yml` is required locally but is `.gitignore`d — see **Configure profile** above.
 
 ## Tests
 
@@ -111,10 +111,12 @@ governed-metrics-starter-kit/
 │   │   ├── stg_orders.sql
 │   │   └── stg_order_items.sql
 │   └── marts/
-│       ├── _marts__models.yml
 │       ├── dim_customers.sql
+│       ├── dim_customers.yml
 │       ├── fct_order_items.sql
-│       └── fct_orders.sql
+│       ├── fct_order_items.yml
+│       ├── fct_orders.sql
+│       └── fct_orders.yml
 └── tests/
     ├── assert_discount_amount_non_negative.sql
     ├── assert_refund_amount_non_negative.sql

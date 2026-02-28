@@ -1,12 +1,11 @@
+# connection config
+profiles.yml
+
 # dbt artifacts
 target/
 dbt_packages/
 logs/
 .user.yml
-
-# DuckDB database
-dev.duckdb
-*.duckdb
 
 # Python
 __pycache__/

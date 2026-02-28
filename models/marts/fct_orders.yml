@@ -1,0 +1,187 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order. Aggregates line items to produce gross_revenue, then
+      computes net_revenue after discounts and refunds.
+    config:
+      meta:
+        primary_key: order_id
+
+        group_details:
+          revenue:
+            label: Revenue
+            description: "Net and gross revenue metrics. Two definitions exist — see owner and tags."
+          orders:
+            label: Orders
+            description: "Order volume and average order value metrics."
+          discounts_and_refunds:
+            label: Discounts & Refunds
+            description: "Discount and refund totals and rates."
+
+        joins:
+          - join: dim_customers
+            type: left
+            sql_on: ${fct_orders.customer_id} = ${dim_customers.customer_id}
+            relationship: many-to-one
+            label: "Customer"
+            description: "Join to dim_customers to explore orders by customer attributes (country, marketing channel, etc.)."
+
+        metrics:
+          # ── Revenue ────────────────────────────────────────────────────────
+          revenue_net:
+            type: sum
+            label: "Net Revenue (Official)"
+            description: >
+              Sum of net_revenue (gross minus discounts and refunds).
+              Official P&L figure used in financial reporting.
+              Owner: Finance | Tags: official, revenue
+            sql: ${net_revenue}
+            groups: [revenue]
+            format: "[$]#,##0.00"
+            owner: Finance
+            tags: [official, revenue]
+
+          revenue_gross:
+            type: sum
+            label: "Gross Revenue (Topline)"
+            description: >
+              Sum of gross_revenue (sum of all line item revenues before deductions).
+              Topline number used in growth and marketing reporting.
+              Owner: Growth | Tags: topline, revenue
+            sql: ${gross_revenue}
+            groups: [revenue]
+            format: "[$]#,##0.00"
+            owner: Growth
+            tags: [topline, revenue]
+
+          # ── Orders ─────────────────────────────────────────────────────────
+          orders_count:
+            type: count_distinct
+            label: "Orders Count"
+            description: "Number of distinct orders."
+            sql: ${order_id}
+            groups: [orders]
+            format: "#,##0"
+
+          aov_net:
+            type: number
+            label: "AOV (Net)"
+            description: >
+              Average order value using net revenue. Preferred AOV for unit economics and P&L analysis.
+              Owner: Finance | Tags: official, aov
+            sql: "${revenue_net} / NULLIF(${orders_count}, 0)"
+            groups: [orders]
+            format: "[$]#,##0.00"
+            owner: Finance
+            tags: [official, aov]
+
+          aov_gross:
+            type: number
+            label: "AOV (Gross)"
+            description: >
+              Average order value using gross revenue. Used for growth and acquisition benchmarking.
+              Owner: Growth | Tags: topline, aov
+            sql: "${revenue_gross} / NULLIF(${orders_count}, 0)"
+            groups: [orders]
+            format: "[$]#,##0.00"
+            owner: Growth
+            tags: [topline, aov]
+
+          # ── Discounts & Refunds ────────────────────────────────────────────
+          total_discount_amount:
+            type: sum
+            label: "Total Discount Amount"
+            description: "Sum of all discounts applied across orders."
+            sql: ${discount_amount}
+            groups: [discounts_and_refunds]
+            format: "[$]#,##0.00"
+
+          total_refund_amount:
+            type: sum
+            label: "Total Refund Amount"
+            description: "Sum of all refunds issued across orders."
+            sql: ${refund_amount}
+            groups: [discounts_and_refunds]
+            format: "[$]#,##0.00"
+
+          refund_rate:
+            type: number
+            label: "Refund Rate"
+            description: "Total refund amount as a proportion of gross revenue."
+            sql: "${total_refund_amount} / NULLIF(${revenue_gross}, 0)"
+            groups: [discounts_and_refunds]
+            format: percent
+
+    columns:
+      - name: order_id
+        description: "Unique identifier for the order."
+        tests:
+          - unique
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: customer_id
+        description: "Foreign key to the customer who placed the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: order_date
+        description: "Date the order was placed."
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: status
+        description: "Fulfillment status of the order."
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: discount_amount
+        description: "Monetary discount applied to the order."
+        config:
+          meta:
+            dimension:
+              type: number
+              hidden: true
+      - name: refund_amount
+        description: "Monetary amount refunded on the order."
+        config:
+          meta:
+            dimension:
+              type: number
+              hidden: true
+      - name: item_count
+        description: "Number of distinct line items in the order."
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: gross_revenue
+        description: "Sum of item_revenue across all line items in the order."
+        tests:
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
+              hidden: true
+      - name: net_revenue
+        description: "gross_revenue minus refund_amount and discount_amount."
+        tests:
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
+              hidden: true

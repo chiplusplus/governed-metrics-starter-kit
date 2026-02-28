@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "One row per customer. Pass-through from stg_customers."
+    config:
+      meta:
+        primary_key: customer_id
+    columns:
+      - name: customer_id
+        description: "Unique identifier for the customer."
+        tests:
+          - unique
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: first_name
+        description: "Customer's first name."
+        config:
+          meta:
+            dimension:
+              type: string
+              hidden: true
+      - name: last_name
+        description: "Customer's last name."
+        config:
+          meta:
+            dimension:
+              hidden: true
+              type: string
+      - name: email
+        description: "Customer's email address."
+        tests:
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: string
+              hidden: true
+      - name: country
+        description: "Country where the customer is based (ISO 2-letter code)."
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: marketing_channel
+        description: "Customer acquisition channel."
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: created_at
+        description: "Date the customer account was created."
+        config:
+          meta:
+            dimension:
+              type: date

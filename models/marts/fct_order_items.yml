@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: fct_order_items
+    description: "One row per order line item. Adds item_revenue (quantity × unit_price)."
+    columns:
+      - name: order_item_id
+        description: "Unique identifier for the line item."
+        tests:
+          - unique
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: order_id
+        description: "Foreign key to the parent order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: product_name
+        description: "Name of the product."
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: quantity
+        description: "Units ordered."
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: unit_price
+        description: "Price per unit at time of order."
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: item_revenue
+        description: "Line-item revenue (quantity × unit_price), rounded to 2 decimal
+          places."
+        tests:
+          - not_null
+        config:
+          meta:
+            dimension:
+              type: number
