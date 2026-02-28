@@ -1,0 +1,39 @@
+order_item_id,order_id,product_name,quantity,unit_price
+1,1,Keyboard,1,79.99
+2,1,Mouse,1,29.99
+3,1,USB Hub,1,19.99
+4,2,Notebook,2,12.99
+5,2,Pen Set,3,8.49
+6,3,Desk Lamp,1,34.99
+7,3,Notebook,1,12.99
+8,3,Cable Organizer,2,14.99
+9,4,Monitor Stand,1,45.00
+10,4,Webcam,1,59.99
+11,5,Headset,1,49.99
+12,5,USB Hub,2,19.99
+13,5,Mouse,1,29.99
+14,6,Notebook,1,12.99
+15,6,Pen Set,2,8.49
+16,7,Keyboard,1,79.99
+17,7,Monitor Stand,1,45.00
+18,7,Desk Lamp,1,34.99
+19,8,Webcam,1,59.99
+20,8,Headset,1,49.99
+21,9,Mouse,2,29.99
+22,9,USB Hub,1,19.99
+23,9,Cable Organizer,3,14.99
+24,10,Notebook,3,12.99
+25,10,Pen Set,1,8.49
+26,11,Keyboard,1,79.99
+27,11,Mouse,1,29.99
+28,11,Headset,1,49.99
+29,12,Desk Lamp,1,34.99
+30,12,Cable Organizer,2,14.99
+31,13,Monitor Stand,1,45.00
+32,13,Webcam,1,59.99
+33,13,USB Hub,3,19.99
+34,14,Notebook,2,12.99
+35,14,Keyboard,1,79.99
+36,15,Desk Lamp,1,34.99
+37,15,Mouse,1,29.99
+38,15,Pen Set,4,8.49

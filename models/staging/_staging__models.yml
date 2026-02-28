@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned and typed customer records sourced from the customers seed."
+    columns:
+      - name: customer_id
+        description: "Unique identifier for a customer."
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "Customer's first name."
+        tests:
+          - not_null
+      - name: last_name
+        description: "Customer's last name."
+        tests:
+          - not_null
+      - name: email
+        description: "Customer's email address."
+        tests:
+          - not_null
+      - name: country
+        description: "Country where the customer is based (ISO 2-letter code)."
+      - name: marketing_channel
+        description: "Acquisition channel that brought the customer (e.g. organic_search, paid_social, email, referral)."
+      - name: created_at
+        description: "Date the customer account was created."
+
+  - name: stg_orders
+    description: "Cleaned and typed order headers sourced from the orders seed."
+    columns:
+      - name: order_id
+        description: "Unique identifier for an order."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to the customer who placed the order."
+        tests:
+          - not_null
+      - name: order_date
+        description: "Date the order was placed."
+        tests:
+          - not_null
+      - name: status
+        description: "Fulfillment status of the order."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [completed, shipped, cancelled, pending]
+      - name: discount_amount
+        description: "Monetary discount applied to the order."
+        tests:
+          - not_null
+      - name: refund_amount
+        description: "Monetary amount refunded on the order."
+        tests:
+          - not_null
+
+  - name: stg_order_items
+    description: "Cleaned and typed order line items sourced from the order_items seed."
+    columns:
+      - name: order_item_id
+        description: "Unique identifier for an order line item."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Foreign key to the parent order."
+        tests:
+          - not_null
+      - name: product_name
+        description: "Name of the product ordered."
+        tests:
+          - not_null
+      - name: quantity
+        description: "Number of units ordered."
+        tests:
+          - not_null
+      - name: unit_price
+        description: "Price per unit at time of order."
+        tests:
+          - not_null

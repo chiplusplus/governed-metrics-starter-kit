@@ -1,0 +1,5 @@
+-- Business rule: refund_amount must never be negative.
+-- Returns rows that violate this rule; a passing test returns zero rows.
+select *
+from {{ ref('stg_orders') }}
+where refund_amount < 0

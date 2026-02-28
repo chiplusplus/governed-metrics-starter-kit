@@ -1,0 +1,6 @@
+customer_id,first_name,last_name,email,country,marketing_channel,created_at
+1,Alice,Chen,alice@example.com,US,organic_search,2024-01-05
+2,Bob,Okafor,bob@example.com,GB,paid_social,2024-01-12
+3,Carol,Martinez,carol@example.com,US,email,2024-02-03
+4,David,Kim,david@example.com,CA,referral,2024-02-20
+5,Eva,Brennan,eva@example.com,IE,organic_search,2024-03-01
