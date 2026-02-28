@@ -1,5 +1,7 @@
 # governed-metrics-starter-kit
 
+[![Validate Metric Contracts](https://github.com/chiplusplus/governed-metrics-starter-kit/actions/workflows/validate_contracts.yml/badge.svg)](https://github.com/chiplusplus/governed-metrics-starter-kit/actions/workflows/validate_contracts.yml)
+
 Every analytics team hits the same wall: two dashboards show different revenue. Finance has one figure. Growth has another. A new analyst learns which to use from Slack. Three months later, nobody's sure anymore.
 
 That's not a data quality problem. It's a governance problem.
@@ -47,6 +49,14 @@ revenue_gross:
 ```
 
 Governance also applies at the column level. Raw revenue columns (`gross_revenue`, `net_revenue`) and PII fields (`email`, `first_name`, `last_name`) are marked `hidden: true` in the Lightdash dimension config — they don't appear in the explore UI. Analysts and AI agents can only access them through the governed metrics above, not as raw dimensions they can accidentally aggregate themselves.
+
+**Both revenue metrics in Lightdash Explore — unambiguous labels, enforced by CI:**
+
+![Net Revenue (Official) vs Gross Revenue (Topline) in Lightdash Explore](docs/screenshots/lightdash-dual-revenue.gif)
+
+**Net Revenue by marketing channel — the dim_customers join working, PII fields absent from the sidebar:**
+
+![Net Revenue sliced by marketing channel via the dim_customers join](docs/screenshots/lightdash-join-slice.gif)
 
 ---
 
