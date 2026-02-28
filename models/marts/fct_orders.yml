@@ -54,7 +54,7 @@ models:
             groups: [revenue]
             format: "[$]#,##0.00"
             owner: Growth
-            tags: [topline, revenue]
+            tags: [supported, topline, revenue]
 
           # ── Orders ─────────────────────────────────────────────────────────
           orders_count:
@@ -64,6 +64,8 @@ models:
             sql: ${order_id}
             groups: [orders]
             format: "#,##0"
+            owner: Growth
+            tags: [supported]
 
           aov_net:
             type: number
@@ -87,7 +89,7 @@ models:
             groups: [orders]
             format: "[$]#,##0.00"
             owner: Growth
-            tags: [topline, aov]
+            tags: [supported, topline, aov]
 
           # ── Discounts & Refunds ────────────────────────────────────────────
           total_discount_amount:
@@ -97,6 +99,8 @@ models:
             sql: ${discount_amount}
             groups: [discounts_and_refunds]
             format: "[$]#,##0.00"
+            owner: Finance
+            tags: [supported]
 
           total_refund_amount:
             type: sum
@@ -105,6 +109,8 @@ models:
             sql: ${refund_amount}
             groups: [discounts_and_refunds]
             format: "[$]#,##0.00"
+            owner: Finance
+            tags: [supported]
 
           refund_rate:
             type: number
@@ -113,6 +119,8 @@ models:
             sql: "${total_refund_amount} / NULLIF(${revenue_gross}, 0)"
             groups: [discounts_and_refunds]
             format: percent
+            owner: Finance
+            tags: [supported]
 
     columns:
       - name: order_id
