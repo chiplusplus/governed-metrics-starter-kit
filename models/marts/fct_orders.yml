@@ -32,7 +32,7 @@ models:
           # ── Revenue ────────────────────────────────────────────────────────
           revenue_net:
             type: sum
-            label: "Net Revenue (Official)"
+            label: "Revenue"
             description: >
               Sum of net_revenue (gross minus discounts and refunds).
               Official P&L figure used in financial reporting.
