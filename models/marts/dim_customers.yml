@@ -3,6 +3,9 @@ version: 2
 models:
   - name: dim_customers
     description: "One row per customer. Pass-through from stg_customers."
+    config:
+      meta:
+        primary_key: customer_id
     columns:
       - name: customer_id
         description: "Unique identifier for the customer."
