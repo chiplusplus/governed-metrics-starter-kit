@@ -19,11 +19,13 @@ models:
           meta:
             dimension:
               type: string
+              hidden: true
       - name: last_name
         description: "Customer's last name."
         config:
           meta:
             dimension:
+              hidden: true
               type: string
       - name: email
         description: "Customer's email address."
@@ -33,6 +35,7 @@ models:
           meta:
             dimension:
               type: string
+              hidden: true
       - name: country
         description: "Country where the customer is based (ISO 2-letter code)."
         config:

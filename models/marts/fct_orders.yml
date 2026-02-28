@@ -44,12 +44,14 @@ models:
           meta:
             dimension:
               type: number
+              hidden: true
       - name: refund_amount
         description: "Monetary amount refunded on the order."
         config:
           meta:
             dimension:
               type: number
+              hidden: true
       - name: item_count
         description: "Number of distinct line items in the order."
         config:
@@ -64,6 +66,7 @@ models:
           meta:
             dimension:
               type: number
+              hidden: true
       - name: net_revenue
         description: "gross_revenue minus refund_amount and discount_amount."
         tests:
@@ -72,3 +75,4 @@ models:
           meta:
             dimension:
               type: number
+              hidden: true
