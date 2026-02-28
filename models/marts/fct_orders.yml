@@ -11,6 +11,10 @@ models:
         tests:
           - unique
           - not_null
+        config:
+          meta:
+            dimension:
+              type: number
       - name: customer_id
         description: "Foreign key to the customer who placed the order."
         tests:
@@ -18,21 +22,53 @@ models:
           - relationships:
               to: ref('dim_customers')
               field: customer_id
+        config:
+          meta:
+            dimension:
+              type: number
       - name: order_date
         description: "Date the order was placed."
+        config:
+          meta:
+            dimension:
+              type: date
       - name: status
         description: "Fulfillment status of the order."
+        config:
+          meta:
+            dimension:
+              type: string
       - name: discount_amount
         description: "Monetary discount applied to the order."
+        config:
+          meta:
+            dimension:
+              type: number
       - name: refund_amount
         description: "Monetary amount refunded on the order."
+        config:
+          meta:
+            dimension:
+              type: number
       - name: item_count
         description: "Number of distinct line items in the order."
+        config:
+          meta:
+            dimension:
+              type: number
       - name: gross_revenue
         description: "Sum of item_revenue across all line items in the order."
         tests:
           - not_null
+        config:
+          meta:
+            dimension:
+              type: number
       - name: net_revenue
         description: "gross_revenue minus refund_amount and discount_amount."
         tests:
           - not_null
+        config:
+          meta:
+            dimension:
+              type: number

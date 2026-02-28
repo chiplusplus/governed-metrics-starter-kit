@@ -9,17 +9,45 @@ models:
         tests:
           - unique
           - not_null
+        config:
+          meta:
+            dimension:
+              type: number
       - name: first_name
         description: "Customer's first name."
+        config:
+          meta:
+            dimension:
+              type: string
       - name: last_name
         description: "Customer's last name."
+        config:
+          meta:
+            dimension:
+              type: string
       - name: email
         description: "Customer's email address."
         tests:
           - not_null
+        config:
+          meta:
+            dimension:
+              type: string
       - name: country
         description: "Country where the customer is based (ISO 2-letter code)."
+        config:
+          meta:
+            dimension:
+              type: string
       - name: marketing_channel
         description: "Customer acquisition channel."
+        config:
+          meta:
+            dimension:
+              type: string
       - name: created_at
         description: "Date the customer account was created."
+        config:
+          meta:
+            dimension:
+              type: date
